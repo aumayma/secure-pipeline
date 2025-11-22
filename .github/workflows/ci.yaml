@@ -36,12 +36,11 @@ jobs:
             *.js
 
       - name: Notify Jenkins (trigger CD)
-        if: always()   # on notifie Jenkins même si l'archive a warnings; adapte si tu veux bloquer
+        if: success()   # déclenche Jenkins uniquement si la CI a réussi
         env:
           JENKINS_TRIGGER_URL: ${{ secrets.JENKINS_TRIGGER_URL }}
         run: |
-          echo "Triggering Jenkins for deploy..."
-          # On envoie le SHA pour que Jenkins puisse récupérer et tagger l'image correctement
-          curl -X POST "${JENKINS_TRIGGER_URL}" \
+          echo "Triggering Jenkins CD pipeline..."
+          curl -X POST "$JENKINS_TRIGGER_URL" \
             -H "Content-Type: application/json" \
-            -d "{\"ref\":\"${{ github.ref }}\",\"sha\":\"${{ github.sha }}\"}"
+            -d "{\"ref\":\"${GITHUB_REF}\",\"sha\":\"${GITHUB_SHA}\"}"
