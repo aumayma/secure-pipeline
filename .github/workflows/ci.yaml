@@ -1,4 +1,4 @@
-name: CI - Code Security & Build
+name: CI - Code Security & Archive
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   security-check:
-    name: Scan Secrets and Vulnerabilities
+    name: Scan Secrets and Vulnerabilities (Gitleaks)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -18,8 +18,8 @@ jobs:
         with:
           args: detect --source . --no-git -v
 
-  build:
-    name: Archive Static App
+  archive:
+    name: Archive Static Files
     runs-on: ubuntu-latest
     needs: security-check
     steps:
@@ -34,3 +34,14 @@ jobs:
             index.html
             *.css
             *.js
+
+      - name: Notify Jenkins (trigger CD)
+        if: always()   # on notifie Jenkins même si l'archive a warnings; adapte si tu veux bloquer
+        env:
+          JENKINS_TRIGGER_URL: ${{ secrets.JENKINS_TRIGGER_URL }}
+        run: |
+          echo "Triggering Jenkins for deploy..."
+          # On envoie le SHA pour que Jenkins puisse récupérer et tagger l'image correctement
+          curl -X POST "${JENKINS_TRIGGER_URL}" \
+            -H "Content-Type: application/json" \
+            -d "{\"ref\":\"${{ github.ref }}\",\"sha\":\"${{ github.sha }}\"}"
